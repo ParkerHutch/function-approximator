@@ -16,72 +16,54 @@ def noise(variance):
     
 def target_function(x):
     return 5 * x + 2
-    #return 2 * x + noise(2)
 
-# TODO SIMPLIFY
 df = pd.DataFrame()
 df['X'] = [x for x in range(0, 100000)]
 df['Y'] = df['X'].apply(target_function)
 
-"""
-data = {'X':[], 'Y':[]}
-for i in range(0, 10000):
-    data['X'].append(i)
-    data['Y'].append(target_function(i))
-
-df = pd.DataFrame(data)
-"""
-
 """ DATA PREPROCESSING """ 
 
 """
-
 TODO: Do I really need normalization for this?
 
-"""
 # Normalize the data using a MinMaxScaler
-"""
+
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 df['X'] = scaler.fit_transform(df[['X']])
 df['Y'] = scaler.fit_transform(df[['Y']])"""
 
-
-""" DATA CONVERSION """
-
-# Convert the data to the Tensorflow format
-#target = df.pop('Y')
-#dataset = tf.data.Dataset.from_tensor_slices((df.values, target.values))
-
-#train_dataset = dataset.shuffle(len(df)).batch(10)
-
 """ MODEL CREATION """
-# Hyperparemeters
-hidden_layer_size = 2
-output_size = 1
-num_epochs=20
+def build_model(num_layers, num_hidden_units):
+    model = tf.keras.Sequential()
+    for i in range(num_layers):
+        model.add(tf.keras.layers.Dense(num_hidden_units, activation='relu'))
+    
+    model.add(tf.keras.layers.Dense(1))
+    return model
 
-early_stopper = tf.keras.callbacks.EarlyStopping(monitor='loss', 
-                                                 mode='min', patience=2)
-
-""" SIMPLE MODEL: 2 hidden units
+# Simple model: build_model(1, 2)
+model = build_model(2, 50)
+"""
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(2, activation='relu'),
-    tf.keras.layers.Dense(output_size)
+    tf.keras.layers.Dense(50, activation='relu'),
+    tf.keras.layers.Dense(50, activation='relu'),
+    tf.keras.layers.Dense(1)
     ])
 """
-
-model = tf.keras.Sequential([
-    tf.keras.layers.Dense(50, activation='relu'),
-    tf.keras.layers.Dense(50, activation='relu'),
-    tf.keras.layers.Dense(output_size)
-    ])
 
 model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 # Try different optimizers: SGD goes to infinity
 
-model.fit(data['X'], data['Y'], epochs=num_epochs, callbacks=[early_stopper])
+num_epochs=20
+early_stopper = tf.keras.callbacks.EarlyStopping(monitor='loss', 
+                                                 mode='min', patience=3)
+model.fit(df['X'].values, df['Y'].values, epochs=num_epochs, 
+          callbacks=[early_stopper])
 
+
+
+""" EVALUATION """
 cleaned_y = []
 for val in preds:
     for cleaned_val in val:
