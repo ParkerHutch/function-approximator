@@ -12,11 +12,11 @@ def noise(variance):
     return random.randrange(-variance, variance)
     
 def target_function(x):
-    return math.sin(x)
+    return 5 * x + 2
     #return 2 * x + noise(2)
 
 data = {'X':[], 'Y':[]}
-for i in range(0, 1000):
+for i in range(0, 10000):
     data['X'].append(i)
     data['Y'].append(target_function(i))
 
@@ -44,8 +44,8 @@ import tensorflow as tf
 target = df.pop('Y')
 dataset = tf.data.Dataset.from_tensor_slices((df.values, target.values))
 
-#train_dataset = dataset.shuffle(len(df))
-#train_dataset = dataset.shuffle(len(df)).batch(5)
+train_dataset = dataset.shuffle(len(df))
+train_dataset = dataset.shuffle(len(df)).batch(5)
 
 
 
@@ -53,20 +53,20 @@ dataset = tf.data.Dataset.from_tensor_slices((df.values, target.values))
 # Hyperparemeters
 hidden_layer_size = 10
 output_size = 1
-num_epochs=20
+num_epochs=10
 """
 early_stopper = tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
                                                  mode='max', patience=2)
 """
 
 model = tf.keras.Sequential([
-    tf.keras.layers.Dense(hidden_layer_size, input_dim=1, activation='linear'),
+    tf.keras.layers.Dense(hidden_layer_size, input_shape=(1,), activation='linear'),
     tf.keras.layers.Dense(hidden_layer_size, activation='relu'),
     tf.keras.layers.Dense(hidden_layer_size, activation='relu'),
-    tf.keras.layers.Dense(output_size, activation='linear')
+    tf.keras.layers.Dense(output_size)
     ])
 
-model.compile(loss='mae', metrics=['mae', 'mse'])
+model.compile(loss='mse', metrics=['mae'])
 
 """
 def build_model():
@@ -84,8 +84,31 @@ def build_model():
   return model
 model = build_model()"""
 
+features, labels = next(iter(train_dataset))
+for feat, arg in train_dataset:
+    #print(feat)
+    
 model.fit(train_dataset, epochs=num_epochs)
 
-preds = model.predict(train_dataset)
+new_data = {'X':data['X'], 'Y':model.predict(data['X']).tolist()}
 
+new_df = pd.DataFrame(new_data)
+
+preds = model.predict(data['X'])
+#preds = model.predict(train_dataset)
+
+cleaned_y = []
+for val in preds:
+    for cleaned_val in val:
+        cleaned_y.append(cleaned_val)
+        
+        """
+for element in train_dataset.as_numpy_iterator(): 
+    for val in element:
+        print(val)"""
+        
+import seaborn as sns
+import matplotlib.pyplot as plt
+ax = sns.lineplot(x=data['X'], y=cleaned_y)
+ax = sns.lineplot(x=data['X'], y=data['Y'])
 
