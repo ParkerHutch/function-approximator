@@ -10,30 +10,20 @@ import math
 
 import tensorflow as tf
 
+np.random.seed(1)
+tf.random.set_seed(1)
+random.seed(1)
+
 """ DATA CREATION """
 def noise(variance):
     return random.randrange(-variance, variance)
     
 def target_function(x):
     return 2 * x
-    #return 5 * x + 2 + noise(2)
 
 df = pd.DataFrame()
 df['X'] = [x for x in range(0, 1000)]
 df['Y'] = df['X'].apply(target_function)
-
-""" DATA PREPROCESSING """ 
-
-"""
-TODO: Do I really need normalization for this?
-
-# Normalize the data using a MinMaxScaler
-
-from sklearn.preprocessing import MinMaxScaler
-scaler = MinMaxScaler()
-df['X'] = scaler.fit_transform(df[['X']])
-df['Y'] = scaler.fit_transform(df[['Y']])
-"""
 
 """ MODEL CREATION """
 def build_model(num_layers, num_hidden_units):
@@ -47,10 +37,11 @@ def build_model(num_layers, num_hidden_units):
 # Simple model: build_model(1, 2)
 model = build_model(2, 50)
 
-model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+optimizer = tf.keras.optimizers.Adam(learning_rate=.001)
+model.compile(loss='huber_loss', optimizer=optimizer, metrics=['mae'])
 # Try different optimizers: with SGD, loss goes to infinity
 
-num_epochs=20
+num_epochs=10
 early_stopper = tf.keras.callbacks.EarlyStopping(monitor='mae', 
                                                  mode='min', patience=2)
 
