@@ -25,6 +25,17 @@ df = pd.DataFrame()
 df['X'] = [x for x in range(0, 1000)]
 df['Y'] = df['X'].apply(target_function)
 
+""" DATA SPLITTING """
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(df['X'], df['Y'], 
+                                                    test_size=.2,
+                                                    random_state=1)
+# Split train set to create validation set
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
+                                                  test_size=.1,
+                                                  random_state=1)
+    
+
 """ MODEL CREATION """
 def build_model(num_layers, num_hidden_units):
     model = tf.keras.Sequential()
@@ -35,24 +46,25 @@ def build_model(num_layers, num_hidden_units):
     return model
 
 # Simple model: build_model(1, 2)
-model = build_model(2, 50)
+model = build_model(1, 50)
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=.001)
-model.compile(loss='huber_loss', optimizer=optimizer, metrics=['mae'])
+optimizer = tf.keras.optimizers.Adam(learning_rate=.01)
+model.compile(loss='mse', optimizer=optimizer, metrics=['mae'])
 # Try different optimizers: with SGD, loss goes to infinity
 
-num_epochs=10
+num_epochs=20
 early_stopper = tf.keras.callbacks.EarlyStopping(monitor='mae', 
-                                                 mode='min', patience=2)
-
-model.fit(df['X'].values, df['Y'].values, epochs=num_epochs, 
+                                                 mode='min', patience=20)
+model.fit(X_train.values, y_train.values, epochs=num_epochs, 
           callbacks=[early_stopper])
 
 """ EVALUATION """
-preds = [pred[0] for pred in model.predict(df['X']).tolist()]
+test_loss, test_acc = model.evaluate(X_test, y_test)
+
+test_df = pd.DataFrame({'X':X_test, 'Target': y_test, 'Prediction': 
+                        [pred[0] for pred in model.predict(X_test)]})
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-ax = sns.lineplot(x=df['X'][:100], y=preds[:100])
-ax = sns.lineplot(x=df['X'][:100], y=df['Y'][:100])
+ax = sns.lineplot(data=test_df[['Target', 'Prediction']])
 
