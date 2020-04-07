@@ -10,20 +10,21 @@ import math
 
 import tensorflow as tf
 
+# Set random seeds for consistent results
 np.random.seed(1)
 tf.random.set_seed(1)
 random.seed(1)
 
 """ DATA CREATION """    
 def target_function(x):
-    return x ** 2.0
+    return x**3.0
 
 df = pd.DataFrame()
-df['X'] = [i for i in range(-5000, 5000)]
+df['X'] = np.linspace(-10,10,500)
 df['Y'] = [target_function(x) for x in df['X'].values]
 
 """ DATA PREPROCESSING """
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 x_scaler = MinMaxScaler()
 y_scaler = MinMaxScaler()
@@ -36,11 +37,6 @@ from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(df['X'], df['Y'], 
                                                     test_size=.2,
                                                     random_state=1)
-# Split train set to create validation set
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
-                                                  test_size=.1,
-                                                  random_state=1)
-    
 """ MODEL CREATION """
 def build_model(num_hidden_layers, num_hidden_units):
     model = tf.keras.Sequential()
@@ -52,23 +48,24 @@ def build_model(num_hidden_layers, num_hidden_units):
     model.add(tf.keras.layers.Dense(1))
     return model
 
-model = build_model(2, 10)
+model = build_model(3, 50)
 
-#optimizer = tf.keras.optimizers.Adam(learning_rate=.001)
 model.compile(loss='mse', optimizer='adam')
 # Try different optimizers: with SGD, loss goes to infinity
 # MSE is good for regression
 
 """ TRAINING """
-num_epochs=20
-early_stopper = tf.keras.callbacks.EarlyStopping(monitor='mae', 
-                                                 mode='min', patience=2)
-model.fit(X_train, y_train, batch_size=10, epochs=num_epochs)
+max_epochs = 100
+batch_size = 3
+
+model.fit(X_train, y_train, epochs=max_epochs, batch_size=batch_size,
+          validation_split = 0.1,
+          verbose=1)
 
 """ EVALUATION """
 test_loss = model.evaluate(X_test, y_test)
 
-eval_df = pd.DataFrame({'X':X_test, 
+eval_df = pd.DataFrame({'X': X_test, 
                         'Target': y_test, 
                         'Prediction': 
                         [pred[0] for pred in model.predict(X_test)]})
@@ -81,6 +78,9 @@ eval_df['Target'] = y_scaler.inverse_transform(
 eval_df['Prediction'] = y_scaler.inverse_transform(
     eval_df['Prediction'].values.reshape(-1, 1))
 
-import seaborn as sns
+eval_df.sort_values(by=['X'], inplace=True)
+
 import matplotlib.pyplot as plt
-ax = sns.lineplot(data=eval_df[['Target', 'Prediction']])
+plt.plot(eval_df['X'], eval_df['Target'])
+plt.plot(eval_df['X'], eval_df['Prediction'])
+plt.show()
