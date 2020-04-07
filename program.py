@@ -13,10 +13,15 @@ LESSONS LEARNED:
 - Use the right metrics. The accuracy metric was originally used while training
     the model, but this value is a poor indicator for performance in regression
     models.
+- Calling model.fit multiple times will fit the model from its current weights,
+    without resetting them (i.e. as if you were fitting a new model)
+- Different optimizers and loss functions can make a difference in training
+    duration and performance (Adam optimizer and mean-squared-error loss 
+    seem best for this case)
 """
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 import random
@@ -98,7 +103,7 @@ def build_model(num_hidden_layers, num_hidden_units):
 
 model = build_model(3, 50)
 
-model.compile(loss='mse', optimizer='adam')
+model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
 # Try different optimizers: with SGD, loss goes to infinity
 # MSE is good for regression
 
@@ -106,9 +111,17 @@ model.compile(loss='mse', optimizer='adam')
 max_epochs = 100
 batch_size = 3
 validation_split = 0.1 
-model.fit(X_train, y_train, epochs=max_epochs, batch_size=batch_size,
+history = model.fit(X_train, y_train, epochs=max_epochs, batch_size=batch_size,
           validation_split = validation_split,
           verbose=1)
+loss_history = history.history['loss']
+
+plt.plot(loss_history)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Loss vs Epoch')
+plt.show()
+
 
 """ EVALUATION """
 test_loss = model.evaluate(X_test, y_test)
@@ -128,7 +141,9 @@ eval_df['Prediction'] = y_scaler.inverse_transform(
 
 eval_df.sort_values(by=['X'], inplace=True)
 
-import matplotlib.pyplot as plt
-plt.plot(eval_df['X'], eval_df['Target'])
-plt.plot(eval_df['X'], eval_df['Prediction'])
+plt.plot(eval_df['X'], eval_df['Target'], label='Target')
+plt.plot(eval_df['X'], eval_df['Prediction'], label='Prediction')
+plt.legend(loc='upper left')
+plt.xlabel('X')
+plt.ylabel('Y')
 plt.show()
