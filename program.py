@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 @author: Parker Hutchinson
+
+LESSONS LEARNED:
+- TensorFlow neural networks don't require tf.keras.data.Dataset objects
+    for training
+- Scaling the data improved the training performance and duration greatly
+    for this dataset
+- Using an EarlyStopper sometimes prevented the model from fitting the data
+    well - when the model was allowed to train for the full >100 epochs with
+    enough neurons, it could usually make a nice-looking curve
+- Use the right metrics. The accuracy metric was originally used while training
+    the model, but this value is a poor indicator for performance in regression
+    models.
 """
 import numpy as np
 import pandas as pd
@@ -17,6 +29,22 @@ random.seed(1)
 
 """ DATA CREATION """    
 def target_function(x):
+    """
+    Produce a y-coordinate from the input x-coordinate, determined by a 
+    predefined mathematical function. 
+
+    Parameters
+    ----------
+    x : float
+        An input x-coordinate
+
+    Returns
+    -------
+    float
+        The output of the predefined mathematical function at the input
+        x-coordinate.
+
+    """
     return x**3.0
 
 df = pd.DataFrame()
@@ -39,6 +67,27 @@ X_train, X_test, y_train, y_test = train_test_split(df['X'], df['Y'],
                                                     random_state=1)
 """ MODEL CREATION """
 def build_model(num_hidden_layers, num_hidden_units):
+    """
+    Construct a neural network with the specified number of hidden layers and 
+    hidden units. 
+
+    Parameters
+    ----------
+    num_hidden_layers : int
+        The number of neuron layers between the model's input and output 
+        layers.
+    num_hidden_units : int
+        The number of neurons to be placed in each of the model's hidden
+        layers.
+
+    Returns
+    -------
+    model : tf.keras.Sequential
+        An uncompiled neural network of size 
+        num_hidden_layers * num_hidden_units + 2 and depth
+        num_hidden_layers + 2.
+
+    """
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Dense(num_hidden_units, input_dim=1, 
                                     activation='relu'))
@@ -57,9 +106,9 @@ model.compile(loss='mse', optimizer='adam')
 """ TRAINING """
 max_epochs = 100
 batch_size = 3
-
+validation_split = 0.1 
 model.fit(X_train, y_train, epochs=max_epochs, batch_size=batch_size,
-          validation_split = 0.1,
+          validation_split = validation_split,
           verbose=1)
 
 """ EVALUATION """
