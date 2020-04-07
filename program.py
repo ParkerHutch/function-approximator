@@ -51,8 +51,10 @@ def target_function(x):
     """
     return x**3.0
 
+x_range = (-10, 10)
+num_points = 500
 df = pd.DataFrame()
-df['X'] = np.linspace(-10,10,500)
+df['X'] = np.linspace(x_range[0], x_range[1], num_points)
 df['Y'] = [target_function(x) for x in df['X'].values]
 
 """ DATA PREPROCESSING """
@@ -65,9 +67,10 @@ df['X'] = x_scaler.fit_transform(df['X'].values.reshape(-1, 1))
 df['Y'] = y_scaler.fit_transform(df['Y'].values.reshape(-1, 1))
 
 """ DATA SPLITTING """
+test_split = 0.2
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(df['X'], df['Y'], 
-                                                    test_size=.2,
+                                                    test_size=test_split,
                                                     random_state=1)
 """ MODEL CREATION """
 def build_model(num_hidden_layers, num_hidden_units):
@@ -103,7 +106,7 @@ def build_model(num_hidden_layers, num_hidden_units):
 
 model = build_model(3, 50)
 
-model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='mse', optimizer='adam')
 # Try different optimizers: with SGD, loss goes to infinity
 # MSE is good for regression
 
@@ -111,25 +114,26 @@ model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
 max_epochs = 100
 batch_size = 3
 validation_split = 0.1 
+# The history object stores training information for loss and any metrics in 
+# the model configuration 
 history = model.fit(X_train, y_train, epochs=max_epochs, batch_size=batch_size,
           validation_split = validation_split,
-          verbose=1)
+          verbose=0)
 loss_history = history.history['loss']
 
 plt.plot(loss_history)
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
-plt.title('Loss vs Epoch')
+plt.title('Training Set Loss versus Epoch')
 plt.show()
 
 
 """ EVALUATION """
-test_loss = model.evaluate(X_test, y_test)
+test_loss = model.evaluate(X_test, y_test, verbose=0)
 
-eval_df = pd.DataFrame({'X': X_test, 
-                        'Target': y_test, 
-                        'Prediction': 
-                        [pred[0] for pred in model.predict(X_test)]})
+eval_df = pd.DataFrame({'X': X_test, 'Target': y_test, 
+     'Prediction': model.predict(X_test).flatten().astype(np.float64)
+     })
 
 # Unscale the values in the DataFrame
 eval_df['X'] = x_scaler.inverse_transform(
@@ -146,4 +150,5 @@ plt.plot(eval_df['X'], eval_df['Prediction'], label='Prediction')
 plt.legend(loc='upper left')
 plt.xlabel('X')
 plt.ylabel('Y')
+plt.title('Model Predictions versus Target Values')
 plt.show()
