@@ -17,10 +17,9 @@ LESSONS LEARNED:
 import numpy as np
 import pandas as pd
 
-import random
-import math
-
 import tensorflow as tf
+
+import random
 
 # Set random seeds for consistent results
 np.random.seed(1)
@@ -52,7 +51,7 @@ df['X'] = np.linspace(-10,10,500)
 df['Y'] = [target_function(x) for x in df['X'].values]
 
 """ DATA PREPROCESSING """
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 
 x_scaler = MinMaxScaler()
 y_scaler = MinMaxScaler()
