@@ -111,6 +111,7 @@ model.compile(loss='mse', optimizer='adam')
 # MSE is good for regression
 
 """ TRAINING """
+print('Training model')
 max_epochs = 100
 batch_size = 3
 validation_split = 0.1 
